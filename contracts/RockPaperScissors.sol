@@ -29,19 +29,25 @@ contract RockPaperScissors{
 
 
 
-    function createGame(uint256 bet, address participant) public payable {
-        require(bet > 0, "The bet value should be greater than zero");
-        gameStarterBet = bet;
+    function createGame(address participant) public payable {
+        require(msg.value > 0, "The bet value should be greater than zero");
+        gameStarterBet = msg.value;
+        gameStarter = msg.sender;
         whitelistedGameParticipant = participant;
+        moveGameStarter=0;
+        moveGameParticipant=0;
         emit GameCreated();
     }
 
-    function joinGame(uint256 bet) public payable {
-        require(bet >= gameStarterBet, "The bet value should be equal to the one from the game starter");
+    function joinGame() public payable {
         require(msg.sender == whitelistedGameParticipant, "Sorry you are not whitelisted");
+        require(msg.value >= gameStarterBet, "The bet value should be equal to the one from the game starter");
         gameParticipant = msg.sender;
-        if(bet>gameStarterBet){
-            payable(msg.sender).transfer(bet-gameStarterBet);
+        console.log("gameStarterBet ",gameStarterBet);
+        if(msg.value>gameStarterBet){
+            console.log("Amount provided too high, starting transfer of ", msg.value-gameStarterBet," back to : ", gameParticipant);
+            payable(gameParticipant).transfer(msg.value-gameStarterBet);
+            console.log("Amount provided too high : ", msg.value-gameStarterBet," transfered back to : ", gameParticipant);
         }
         emit GameCreated();
     }
@@ -68,59 +74,64 @@ contract RockPaperScissors{
             stringMoveGameParticipant=stringMove;
         }
 
+        console.log(gameParticipant," played :", stringMoveGameParticipant);
+        console.log(gameStarter," played :", stringMoveGameStarter);
+
+
         if(moveGameStarter!=0 && moveGameParticipant!=0){
             if (moveGameStarter==1){
                 if (moveGameParticipant == 1){
-                    gameWinner==address(0);
+                    gameWinner=address(0);
                 }
                 else if (moveGameParticipant == 2){
-                    gameWinner==gameParticipant;
+                    gameWinner=gameParticipant;
                 }
                 else if (moveGameParticipant == 3){
-                    gameWinner==gameStarter;
+                    gameWinner=gameStarter;
                 }
             }
             else if (moveGameStarter == 2){
-                if (moveGameParticipant == 2){
+                if (moveGameParticipant == 1){
                     gameWinner=gameStarter;
                 }
                 else if (moveGameParticipant == 2){
-                    gameWinner==address(0);
+                    gameWinner=address(0);
                 }
                 else if (moveGameParticipant == 3){
-                    gameWinner==gameParticipant;
+                    gameWinner=gameParticipant;
                 }
             }
             else if (moveGameStarter == 3){
                 if (moveGameParticipant == 1){
-                    gameWinner==gameParticipant;
+                    gameWinner=gameParticipant;
                 }
                 else if (moveGameParticipant == 2){
-                    gameWinner==gameStarter;
+                    gameWinner=gameStarter;
                 }
                 else if (moveGameParticipant == 3){
-                    gameWinner==address(0);
+                    gameWinner=address(0);
                 }
             }
+            console.log(gameParticipant," played :", stringMoveGameParticipant);
+            console.log(gameStarter," played :", stringMoveGameStarter);
+            console.log("Game winner :  ", gameWinner);
+
+            if(gameWinner!=address(0)){
+                payable(gameWinner).transfer(gameStarterBet*2);
+                console.log(gameStarterBet*2," transfered to : ", gameWinner);
+            }else{
+                payable(gameStarter).transfer(gameStarterBet);
+                payable(gameParticipant).transfer(gameStarterBet);
+                console.log(gameStarterBet," transfered to : ", gameStarter);
+                console.log(gameStarterBet," transfered to : ", gameParticipant);
+            }
+
+            moveGameStarter=0;
+            moveGameParticipant=0;
+            emit GameComplete(gameWinner);
         }
         
-        console.log(gameParticipant," played :", stringMoveGameParticipant);
-        console.log(gameStarter," played :", stringMoveGameStarter);
-        console.log("Game winner :  ", gameWinner);
 
-        if(gameWinner!=address(0)){
-            payable(gameWinner).transfer(gameStarterBet*2);
-            console.log(gameStarterBet*2," transfered to : ", gameWinner);
-        }else{
-            payable(gameStarter).transfer(gameStarterBet);
-            payable(gameParticipant).transfer(gameStarterBet);
-            console.log(gameStarterBet," transfered to : ", gameStarter);
-            console.log(gameStarterBet," transfered to : ", gameParticipant);
-        }
-
-        moveGameStarter=0;
-        moveGameParticipant=0;
-        emit GameComplete(gameWinner);
     }
 
 }
